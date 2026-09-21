@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>personality quiz</title>
+<style>
+  :root {
+    --bg: #fbfbfc;
+    --ink: #17191e;
+    --muted: #6a6f7a;
+    --line: #dcdfe5;
+    --track: #e9ebef;
+    --accent: #2b3fd6;
+    --accent-ink: #ffffff;
+    --hover: #f0f1f5;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #131418;
+      --ink: #eceef2;
+      --muted: #9298a4;
+      --line: #2c2f38;
+      --track: #24262e;
+      --accent: #8fa0ff;
+      --accent-ink: #10121a;
+      --hover: #1c1e25;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #131418;
+    --ink: #eceef2;
+    --muted: #9298a4;
+    --line: #2c2f38;
+    --track: #24262e;
+    --accent: #8fa0ff;
+    --accent-ink: #10121a;
+    --hover: #1c1e25;
+  }
+
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 56px 24px 72px;
+  }
+
+  h1, h2, p { margin: 0; }
+  h1 { font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; }
+  .lede { color: var(--muted); margin-top: 12px; }
+
+  button, input { font: inherit; color: inherit; text-transform: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .btn {
+    display: inline-block;
+    padding: 11px 20px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.ghost:hover:not(:disabled) { background: var(--hover); }
+  .link {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: none; border: 0; padding: 4px 0; cursor: pointer;
+    color: var(--muted);
+  }
+  .link svg { flex: none; }
+  .link:hover { color: var(--ink); }
+  .link:disabled { visibility: hidden; }
+
+  .field { margin-top: 36px; }
+  label { display: block; font-size: 15px; color: var(--muted); margin-bottom: 8px; }
+  input[type="text"] {
+    width: 100%;
+    padding: 11px 12px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  input::placeholder { color: var(--muted); opacity: 0.8; }
+  input[type="text"]:focus { border-color: var(--ink); outline: none; }
+  input[type="text"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .start-actions { margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+  .old-results { margin-left: auto; text-align: right; }
+  .old-results .link { font-size: 15px; }
+
+  .progress { height: 2px; background: var(--track); margin: 0 0 28px; }
+  .progress > div { height: 100%; background: var(--ink); }
+  .counter { font-size: 15px; color: var(--muted); margin-bottom: 10px; }
+  .question { font-size: 24px; line-height: 1.3; font-weight: 500; letter-spacing: -0.005em; }
+  .hint { margin-top: 10px; font-size: 15px; color: var(--muted); }
+  .answers { margin: 28px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+  .answer {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    padding: 14px 16px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .answer:hover { background: var(--hover); border-color: var(--muted); }
+  .answer[aria-checked="true"] {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .box {
+    flex: none;
+    width: 20px; height: 20px;
+    display: grid; place-items: center;
+    border: 1.5px solid var(--muted);
+    border-radius: 50%;
+    color: var(--accent-ink);
+  }
+  .answer.multi .box { border-radius: 4px; }
+  .box svg { width: 14px; height: 14px; opacity: 0; }
+  .box path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+  .answer[aria-checked="true"] .box { background: var(--accent); border-color: var(--accent); }
+  .answer[aria-checked="true"] .box svg { opacity: 1; }
+  .answer.registered .box path { animation: draw 160ms ease-out; }
+  @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+  .answer.unregistered { animation: row-off 160ms ease-out; }
+  .answer.unregistered .box { animation: box-off 160ms ease-out; }
+  .answer.unregistered .box svg { opacity: 1; animation: fade-out 160ms ease-out forwards; }
+  .answer.unregistered .box path { animation: undraw 160ms ease-out forwards; }
+  @keyframes undraw { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 1; } }
+  @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes box-off {
+    from { background: var(--accent); border-color: var(--accent); }
+    to   { background: transparent;   border-color: var(--muted); }
+  }
+  @keyframes row-off {
+    from { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: var(--accent); }
+    to   { background: transparent; border-color: var(--line); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .answer.registered .box path,
+    .answer.unregistered, .answer.unregistered .box,
+    .answer.unregistered .box svg, .answer.unregistered .box path { animation: none; }
+    .answer.unregistered .box svg { opacity: 0; }
+  }
+  .nav { margin-top: 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; }
+
+  .results-head { margin-bottom: 8px; }
+  .top-line { margin-top: 12px; color: var(--muted); }
+  .top-line strong { color: var(--ink); font-weight: 600; }
+  .cats { margin-top: 36px; display: grid; gap: 28px; }
+  .cat-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  .cat-name { font-weight: 600; }
+  .cat-pct { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .bar { height: 8px; background: var(--track); border-radius: 4px; margin: 8px 0 8px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--accent); }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+  .radar { margin-top: 44px; }
+  .radar svg { display: block; width: 100%; max-width: 440px; margin: 0 auto; }
+  .radar text { font-family: inherit; }
+  .cat-desc { font-size: 15px; color: var(--muted); }
+  .results-actions { margin-top: 44px; text-align: right; }
+
+  @media (max-width: 480px) {
+    main { padding: 36px 20px 56px; }
+    h1 { font-size: 24px; }
+    .question { font-size: 21px; }
+  }
+</style>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+
+<script>
+
+const QUIZ = {
+  title: "personality quiz",
+  intro: "30 questions (approx. 5mn). have funnnnn :)",
+
+  categories: [
+    { id: "cheerful",    name: "cheerful",    color: "#f5b400", description: "hey leave some whimsy for the rest of us" },
+    { id: "creative",    name: "creative",    color: "#9b5de5", description: "your mind has wonderful ideas and i wanna hear them" },
+    { id: "organized",   name: "organized",   color: "#00a6a6", description: "gotta keep everything clean and tidy, hm?" },
+    { id: "adventurous", name: "adventurous", color: "#f25c2a", description: "you LOVE doing crazy shit and i respect that" },
+    { id: "caring",      name: "caring",      color: "#ff5d8f", description: "awhhhhh you're such a cutie pie, thank you for being you" },
+    { id: "curious",     name: "curious",     color: "#3a86ff", description: "inquisitive ahh 😭" },
+  ],
+};
+
+const q = (text, answers, multiple = false, extra = {}) =>
+  ({ text, answers, multiple, ...extra });
+
+QUIZ.questions = [
+  q("i like hanging out with friends often", [
+    { text: "YEAHHHH I LOVE PEOPLE",       effects: { cheerful:  2 } },
+    { text: "yeah sure",                   effects: { cheerful:  1 } },
+    { text: "uhhh not that much ngl",      effects: { cheerful: -1, curious: 1 } },
+    { text: "my friends lowk hate me",     effects: { cheerful: -2, creative: 1 } },
+    { text: "i don't have any friends :(", effects: { cheerful: -2, caring: 1 } },
+  ]),
+
+  q("what do you do in your free time?", [
+    { text: "reading/writing",       effects: { creative: 2, curious: 1 } },
+    { text: "listening to music",    effects: { creative: 2 } },
+    { text: "video games",           effects: { creative: 1, adventurous: 1 } },
+    { text: "watching movies/shows", effects: { creative: 1, cheerful: 1 } },
+    { text: "studying",              effects: { organized: 2, curious: 2, creative: -1 } },
+    { text: "sports",                effects: { adventurous: 2, cheerful: 1 } },
+    { text: "other",                 effects: { curious: 1 }, exclusive: true },
+  ], true, { tooMany: { above: 4, label: "jesus christ dude" } }),
+
+  q("how is your relationship with your family?", [
+    { text: "very good",                             effects: { caring:  2, cheerful: 1 } },
+    { text: "it's alright",                          effects: { caring:  1, organized: 1 } },
+    { text: "it's complicated",                      effects: { caring: -1, curious: 1 } },
+    { text: "i don't really talk to them very much", effects: { caring: -1, adventurous: 1 } },
+    { text: "horrible",                              effects: { caring: -2, creative: 1 } },
+  ]),
+
+  q("what was your dream job as a kid?", [
+    { text: "nurse/vet",   effects: { caring: 2, adventurous: -1 } },
+    { text: "firefighter", effects: { adventurous: 2, caring: 1 } },
+    { text: "policeman",   effects: { adventurous: 1, organized: 1 } },
+    { text: "astronaut",   effects: { adventurous: 2, curious: 1 } },
+    { text: "teacher",     effects: { caring: 1, organized: 1 } },
+    { text: "athlete",     effects: { adventurous: 1, cheerful: 1 } },
+    { text: "actor",       effects: { creative: 2, cheerful: 1 } },
+    { text: "scientist",   effects: { curious: 2, organized: 1 } },
+    { text: "artist",      effects: { creative: 2 } },
+    { text: "other",       effects: { curious: 1 } },
+  ]),
+
+  q("you're in charge of organizing an outing? whaddya do", [
+    { text: "we going hiking",              effects: { adventurous: 2, organized: 1 } },
+    { text: "mall shopping!",               effects: { cheerful: 2 } },
+    { text: "go to a museum",               effects: { curious: 2, organized: 1 } },
+    { text: "go to a zoo",                  effects: { caring: 2 } },
+    { text: "let's go bowling :p",          effects: { cheerful: 1, organized: 1 } },
+    { text: "arcade games :o",              effects: { creative: 1, cheerful: 1 } },
+    { text: "why am i even in charge 😭",   effects: { organized: -2, caring: 1 } },
+  ]),
+
+  q("you HAVE to do networking at your job. you arrive in a crowded room, what do you do?", [
+    { text: "head STRAIGHT to whoever i know",                effects: { organized: 1, caring: 1 } },
+    { text: "wander around and meet new people",              effects: { cheerful: 2, adventurous: 1 } },
+    { text: "cry because why am i even here",                 effects: { cheerful: -2, caring: 1 } },
+    { text: "i don't care about the people, show me the buffet", effects: { cheerful: -1, adventurous: 1 } },
+  ]),
+
+  q("team work time! what type of person are you in this case?", [
+    { text: "the leader: i try to do everything in my power to make sure the project is going forward",
+      effects: { organized: 2, cheerful: 1 } },
+    { text: "the pleaser: whatever the group chooses, let's roll with it. i'm okay with everything",
+      effects: { caring: 2 } },
+    { text: "the negotiator: i try to make everyone's ideas work together so the project is a bit of everyone",
+      effects: { creative: 2, caring: 1 } },
+    { text: "the maverick: fuck everyone, imma do my own thing",
+      effects: { adventurous: 2, organized: -1 } },
+  ]),
+
+  q("choose your magical weapon", [
+    { text: "scepter that shoots out bolts that tidy everything up",       effects: { organized: 2 } },
+    { text: "microwave that allows you to get any food you want",          effects: { caring: 1, cheerful: 1 } },
+    { text: "magic scrapbook that allows you to never run out of ideas",   effects: { creative: 2 } },
+    { text: "a sword that slices through everything",                      effects: { adventurous: 2 } },
+    { text: "all of those are trash, give me an ipod",                     effects: { curious: 1, creative: 1 } },
+  ]),
+
+  q("remove two things from earth rn", [
+    { text: "orange president man",      effects: { curious: 1, caring: 1 } },
+    { text: "taxes",                     effects: { organized: 1, curious: 1 } },
+    { text: "feeling like not doing anything", effects: { organized: 2 } },
+    { text: "blank page syndrome",       effects: { creative: 2 } },
+    { text: "traffic",                   effects: { adventurous: 1, organized: 1 } },
+    { text: "mosquitoes",                effects: { adventurous: 1, cheerful: 1 } },
+    { text: "dumb podcasters",           effects: { curious: 2 } },
+  ], 2),
+
+  q("what is your spiritual animal", [
+    { text: "owl",                                        effects: { curious: 2 } },
+    { text: "cat",                                        effects: { creative: 1, adventurous: 1 } },
+    { text: "doggo :)",                                   effects: { caring: 2, cheerful: 1 } },
+    { text: "bird. any bird. thing that flies",           effects: { adventurous: 2 } },
+    { text: "red panda :D",                               effects: { cheerful: 2 } },
+    { text: "some obscure shit like a gecko or sum",      effects: { creative: 1, curious: 1 } },
+  ]),
+
+  q("if you had to leave only one social media alive", [
+    { text: "facebook",                          effects: { organized: 1, caring: 1 } },
+    { text: "whatsapp",                          effects: { caring: 2 } },
+    { text: "instagram",                         effects: { creative: 1, cheerful: 1 } },
+    { text: "snapchat",                          effects: { cheerful: 2 } },
+    { text: "twitter",                           effects: { curious: 1, creative: 1 } },
+    { text: "discord",                          effects: { cheerful: 1, creative: 1 } },
+    { text: "youtube",                           effects: { curious: 2 } },
+    { text: "imessage, i don't do social",      effects: { organized: 1, adventurous: 1 } },
+  ]),
+
+  q("choose one game to take with you on a deserted island", [
+    { text: "stardew valley (#autism)",             effects: { organized: 2, caring: 1 } },
+    { text: "gta v",                                effects: { adventurous: 2 } },
+    { text: "fortnite",                             effects: { cheerful: 2, adventurous: 1 } },
+    { text: "minecraft",                            effects: { creative: 2, curious: 1 } },
+    { text: "any of the roblox tycoon games",       effects: { organized: 1, creative: 1 } },
+    { text: "rust",                                 effects: { adventurous: 2, curious: 1 } },
+    { text: "genshin impact",                       effects: { curious: 2, adventurous: 1 } },
+    { text: "cyberpunk 2077",                       effects: { creative: 1, adventurous: 1 } },
+  ]),
+
+  q("how do you sleep", [
+    { text: "on the back",                                   effects: { organized: 2 } },
+    { text: "on the side",                                   effects: { caring: 1, organized: 1 } },
+    { text: "on the stomach (you fucking psycho????)",       effects: { adventurous: 2 } },
+    { text: "one leg above, one under the blanket",          effects: { creative: 2 } },
+    { text: "star formation",                                effects: { cheerful: 2 } },
+    { text: "i dunno, usually end on the floor",             effects: { curious: 1, adventurous: 1 } },
+  ]),
+
+  q("superpower factory just opened, what do you choose", [
+    { text: "flying",                                                  effects: { adventurous: 2 } },
+    { text: "super speed",                                             effects: { adventurous: 1, organized: 1 } },
+    { text: "invisibility",                                            effects: { curious: 2 } },
+    { text: "fast problem solving",                                    effects: { curious: 2, organized: 1 } },
+    { text: "not needing to sleep",                                    effects: { organized: 2 } },
+    { text: "super strength",                                          effects: { caring: 1, adventurous: 1 } },
+    { text: "being able to plug a usb right the first time",         effects: { cheerful: 2 } },
+  ]),
+
+  q("santa wants to know what you want", [
+    { text: "rc car, nyoom",                                   effects: { adventurous: 2 } },
+    { text: "full discography of your favorite artist in vinyl", effects: { creative: 2, curious: 1 } },
+    { text: "steam gift card",                                 effects: { curious: 1, organized: 1 } },
+    { text: "a cute plushie",                                  effects: { caring: 2, cheerful: 1 } },
+    { text: "cool-looking sweater",                            effects: { creative: 1, cheerful: 1 } },
+    { text: "a kitty",                                         effects: { caring: 2 } },
+    { text: "ten bouncing balls",                              effects: { cheerful: 2 } },
+    { text: "a new charging cable",                            effects: { organized: 2 } },
+  ], true, { max: 2 }),
+
+  q("choose your favorite show(s)", [
+    { text: "umbrella academy",              effects: { creative: 1, adventurous: 1 } },
+    { text: "one piece",                     effects: { adventurous: 2, caring: 1 } },
+    { text: "outer banks",                   effects: { adventurous: 2, cheerful: 1 } },
+    { text: "euphoria",                      effects: { creative: 2 } },
+    { text: "arcane",                        effects: { creative: 1, curious: 1 } },
+    { text: "smiling friends",               effects: { cheerful: 1, creative: 1 } },
+    { text: "family guy",                    effects: { cheerful: 2 } },
+    { text: "the amazing world of gumball",  effects: { cheerful: 1, creative: 1 } },
+    { text: "adventure time",                effects: { adventurous: 1, caring: 1 } },
+    { text: "the big bang theory",           effects: { curious: 2, organized: 1 } },
+    { text: "the office",                    effects: { cheerful: 1, organized: 1 } },
+    { text: "twilight",                      effects: { caring: 2 } },
+    { text: "death note",                    effects: { curious: 2 } },
+    { text: "game of thrones",               effects: { adventurous: 1, curious: 1 } },
+    { text: "other (i don't have taste)",    effects: { caring: 1 }, exclusive: true },
+  ], true, { max: 3 }),
+
+  q("favorite artist(s)?", [
+    { text: "lana del rey",          effects: { creative: 2, caring: 1 } },
+    { text: "pinkpantheress",        effects: { cheerful: 2 } },
+    { text: "blackpink",             effects: { cheerful: 2 } },
+    { text: "tyler the creator",     effects: { creative: 2, adventurous: 1 } },
+    { text: "a$ap rocky",            effects: { adventurous: 2, creative: 1 } },
+    { text: "the marias",            effects: { caring: 2 } },
+    { text: "malcolm todd",          effects: { caring: 1, cheerful: 1 } },
+    { text: "billie eilish",         effects: { creative: 1, curious: 1 } },
+    { text: "the weeknd",            effects: { adventurous: 2 } },
+    { text: "daniel caesar",         effects: { caring: 2 } },
+    { text: "don toliver",           effects: { adventurous: 1, cheerful: 1 } },
+    { text: "childish gambino",      effects: { creative: 2, curious: 1 } },
+    { text: "mac demarco",           effects: { cheerful: 1, creative: 1 } },
+    { text: "the neighbourhood",     effects: { curious: 1, adventurous: 1 } },
+    { text: "steve lacy",            effects: { creative: 1, cheerful: 1 } },
+    { text: "frank ocean",           effects: { creative: 2, curious: 1 } },
+    { text: "beach house",           effects: { curious: 2 } },
+    { text: "uhhhhh (other)",        effects: { curious: 1 }, exclusive: true },
+  ], true, { max: 3 }),
+
+  q("okay now choose a movie any movie GO", [
+    { text: "la la land (2016)",             effects: { creative: 2, caring: 1 } },
+    { text: "spiderman: homecoming (2017)",  effects: { caring: 2, cheerful: 1 } },
+    { text: "backrooms (2026)",              effects: { curious: 2, adventurous: 1 } },
+    { text: "zootopia (2016)",               effects: { cheerful: 2, curious: 1 } },
+    { text: "fight club (1999)",             effects: { adventurous: 2, curious: 1 } },
+    { text: "coraline (2009)",               effects: { creative: 2, curious: 1 } },
+    { text: "back to the future (1985)",     effects: { adventurous: 1, organized: 1 } },
+    { text: "beautiful boy (2018)",          effects: { caring: 2 } },
+    { text: "interstellar (2014)",           effects: { curious: 2, caring: 1 } },
+    { text: "howl's moving castle (2004)",   effects: { creative: 2, adventurous: 1 } },
+  ]),
+
+  q("hey pick a color", [
+    { text: "deep blue",        effects: { organized: 1, curious: 1 } },
+    { text: "burgundy red",     effects: { adventurous: 1, caring: 1 } },
+    { text: "sunny yellow",     effects: { cheerful: 2 } },
+    { text: "forest green",     effects: { caring: 2 } },
+    { text: "autumn orange",    effects: { creative: 2, cheerful: 1 } },
+    { text: "lavender violet",  effects: { caring: 1, curious: 1 } },
+    { text: "pure white",       effects: { organized: 2 } },
+  ]),
+
+  q("you get to have a cool piece of tech from the 80s. what do you pick?", [
+    { text: "sony walkman",                                       effects: { creative: 1, adventurous: 1 } },
+    { text: "boombox",                                            effects: { cheerful: 2 } },
+    { text: "a vcr with some vhs tapes",                          effects: { caring: 2 } },
+    { text: "the NES",                                            effects: { cheerful: 1, adventurous: 1 } },
+    { text: "special edition fast-food collectible glasses",      effects: { organized: 2, cheerful: 1 } },
+    { text: "polaroid sun 600",                                   effects: { creative: 2, caring: 1 } },
+    { text: "apple macintosh (1984)",                             effects: { curious: 2, organized: 1 } },
+  ]),
+
+  q("how do you study?", [
+    { text: "i put music on and lock the fuck in",         effects: { creative: 1, organized: 1 } },
+    { text: "no music, pen and paper, rawdogging it",      effects: { organized: 2, adventurous: 1 } },
+    { text: "i do flashcards and self-quizzes",            effects: { organized: 2, curious: 1 } },
+    { text: "i get my friends or family to help me",       effects: { caring: 1, cheerful: 1 } },
+    { text: "i keep procrastinating, smh",                 effects: { organized: -2, creative: 1 } },
+  ]),
+
+  q("pick a kind of pasta", [
+    { text: "spaghetti bolognese",  effects: { caring: 2 } },
+    { text: "carbonara",            effects: { organized: 1, curious: 1 } },
+    { text: "pesto",                effects: { creative: 1, adventurous: 1 } },
+    { text: "fettucine alfredo",    effects: { cheerful: 2 } },
+    { text: "lasagna",              effects: { organized: 2, caring: 1 } },
+    { text: "mac and cheese",       effects: { cheerful: 1, caring: 1 } },
+  ]),
+
+  q("what does your room look like?", [
+    { text: "it's all tidy and clean",                                        effects: { organized: 2 } },
+    { text: "ehhh a bit messy but it's alright",                              effects: { organized: 1, cheerful: 1 } },
+    { text: "at least it's clean, but not organized",                         effects: { organized: 1, creative: 1 } },
+    { text: "there is shit EVERYWHERE but i promise i'll clean it soon",      effects: { organized: -2, curious: 1 } },
+    { text: "plushies have invaded my room",                                  effects: { caring: 2, cheerful: 1 } },
+  ]),
+
+  q("what is your love language?", [
+    { text: "gift giving",            effects: { creative: 1, caring: 1 } },
+    { text: "words of affirmation",   effects: { cheerful: 1, caring: 1 } },
+    { text: "physical touch",         effects: { caring: 2 } },
+    { text: "quality time",           effects: { caring: 1, curious: 1 } },
+    { text: "acts of service",        effects: { organized: 2, caring: 1 } },
+  ]),
+
+  q("favorite season?", [
+    { text: "spring",  effects: { cheerful: 1, organized: 1 } },
+    { text: "summer",  effects: { adventurous: 2, cheerful: 1 } },
+    { text: "fall",    effects: { creative: 2, caring: 1 } },
+    { text: "winter",  effects: { curious: 1, organized: 1 } },
+  ]),
+
+  q("how do you handle a deadline?", [
+    { text: "start early and finish early",                                   effects: { organized: 2, caring: 1 } },
+    { text: "use a planner and sticky notes to keep track of everything",     effects: { organized: 2, creative: 1 } },
+    { text: "panic at 11:59pm sharp",                                         effects: { adventurous: 2, organized: -1 } },
+    { text: "what deadline",                                                  effects: { cheerful: 1, organized: -2 } },
+  ]),
+
+  q("you can learn any skill instantly", [
+    { text: "be able to play any instrument",   effects: { creative: 2 } },
+    { text: "every language",                   effects: { curious: 2, caring: 1 } },
+    { text: "cook like a michelin chef",        effects: { caring: 2, organized: 1 } },
+    { text: "paint really good",                effects: { creative: 2 } },
+    { text: "be able to code",                  effects: { curious: 2, organized: 1 } },
+  ]),
+
+  q("if your life was a movie, what genre would it be?", [
+    { text: "rom-com",            effects: { caring: 2, cheerful: 1 } },
+    { text: "horror",             effects: { adventurous: 1, curious: 1 } },
+    { text: "indie drama",        effects: { creative: 2, curious: 1 } },
+    { text: "action",             effects: { adventurous: 2 } },
+    { text: "animated musical",   effects: { cheerful: 2, creative: 1 } },
+    { text: "coming-of-age",      effects: { curious: 1, adventurous: 1 } },
+  ]),
+
+  q("where would you wanna live?", [
+    { text: "apartment, big city",        effects: { cheerful: 1, adventurous: 1 } },
+    { text: "nice house, small town",     effects: { caring: 2, organized: 1 } },
+    { text: "cozy cabin in the woods",    effects: { creative: 1, curious: 1 } },
+    { text: "beach house",                effects: { cheerful: 2 } },
+    { text: "inside the iss",             effects: { adventurous: 2, curious: 2 } },
+  ]),
+
+  q("last one! if you were a dessert, which one would you be?", [
+    { text: "chocolate lava cake",                        effects: { adventurous: 2 } },
+    { text: "ice cream sundae with cute toppings :p", effects: { cheerful: 2, creative: 1 } },
+    { text: "crème brûlée",                               effects: { organized: 2, curious: 1 } },
+    { text: "chocolate muffin",                            effects: { caring: 2, cheerful: 1 } },
+    { text: "macarons",                                   effects: { creative: 2, organized: 1 } },
+    { text: "mochi",                                      effects: { caring: 1, curious: 1 } },
+  ]),
+];
+
+const app = document.getElementById("app");
+const state = { stage: "start", name: "", index: 0, chosen: [] };
+
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (v === true) el.setAttribute(k, "");
+    else if (v !== false && v != null) el.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) {
+    if (kid == null || kid === false) continue;
+    el.append(kid.nodeType ? kid : document.createTextNode(kid));
+  }
+  return el;
+}
+
+function svg(markup) {
+  const t = document.createElement("template");
+  t.innerHTML = markup.trim();
+  return t.content.firstChild;
+}
+const CHECK = () => svg('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>');
+const ARROW_RIGHT = () => svg('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>');
+const CROSS = () => svg('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>');
+const ARROW_LEFT = () => svg('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>');
+
+function mount(...nodes) {
+  app.replaceChildren(...nodes.filter(Boolean));
+  window.scrollTo(0, 0);
+}
+
+function effectOf(answer, traitId) {
+  return answer.effects[traitId] || 0;
+}
+
+const MULTI_CAP = 3;
+const sumTop = (arr, n) => arr.slice(0, n).reduce((x, y) => x + y, 0);
+
+function computeResults() {
+  return QUIZ.categories.map(cat => {
+    let score = 0, min = 0, max = 0, mean = 0;
+    QUIZ.questions.forEach((question, i) => {
+      const vals = question.answers.map(a => effectOf(a, cat.id));
+      const free = vals.filter((_, k) => !question.answers[k].exclusive);
+      const excl = vals.filter((_, k) => question.answers[k].exclusive);
+      const avg = free.reduce((x, y) => x + y, 0) / free.length;
+      if (typeof question.multiple === "number") {
+        const sorted = [...vals].sort((x, y) => y - x);
+        max += sumTop(sorted, question.multiple);
+        min += sumTop([...sorted].reverse(), question.multiple);
+        mean += question.multiple * avg;
+      } else if (question.multiple) {
+        const top = question.max || MULTI_CAP;
+        max += Math.max(sumTop(free.filter(v => v > 0).sort((x, y) => y - x), top), ...excl, 0);
+        min += Math.min(sumTop(free.filter(v => v < 0).sort((x, y) => x - y), top), ...excl, 0);
+        mean += ((1 + top) / 2) * avg;
+      } else {
+        max += Math.max(...vals);
+        min += Math.min(...vals);
+        mean += avg;
+      }
+      (state.chosen[i] || []).forEach(ai => { score += vals[ai]; });
+    });
+    let percent = 0;
+    if (max > min) {
+      percent = score >= mean
+        ? 50 + (50 * (score - mean)) / Math.max(max - mean, 1e-9)
+        : (50 * (score - min)) / Math.max(mean - min, 1e-9);
+    }
+    percent = Math.round(Math.max(0, Math.min(100, percent)));
+    return { ...cat, percent };
+  });
+}
+
+const NAME_MAX = 18;
+
+function cleanName(raw) {
+  const kept = String(raw)
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N} '.-]/gu, "")
+    .replace(/ {2,}/g, " ");
+  return Array.from(kept).slice(0, NAME_MAX).join("");
+}
+
+const STORAGE_KEY = "personality-quiz-result";
+
+function quizSignature() {
+  const str = JSON.stringify(QUIZ.questions.map(x => [x.text, !!x.multiple, x.answers]));
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+  return String(hash);
+}
+
+function saveResult() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ name: state.name, chosen: state.chosen, sig: quizSignature() }));
+  } catch (e) {}
+}
+
+function loadResult() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    const complete = Array.isArray(data.chosen) && data.chosen.length === QUIZ.questions.length &&
+      data.chosen.every(c => Array.isArray(c) && c.length > 0);
+    return data.sig === quizSignature() && data.name && complete ? data : null;
+  } catch (e) { return null; }
+}
+
+function renderStart() {
+  const input = h("input", {
+    type: "text", id: "name", maxlength: String(NAME_MAX), autocomplete: "given-name", placeholder: "enter your awesome name here", spellcheck: "false",
+    autofocus: true, value: state.name,
+  });
+  const start = h("button", { class: "btn", type: "button", disabled: !state.name.trim() }, "start", ARROW_RIGHT());
+
+  const begin = () => {
+    const name = cleanName(input.value).trim();
+    if (!name) return;
+    state.name = name; state.index = 0; state.chosen = [];
+    state.stage = "quiz";
+    render();
+  };
+
+  input.addEventListener("input", () => {
+    const cleaned = cleanName(input.value);
+    if (cleaned !== input.value) input.value = cleaned;
+    start.disabled = !input.value.trim();
+  });
+  input.addEventListener("keydown", e => { if (e.key === "Enter") begin(); });
+  start.addEventListener("click", begin);
+
+  const saved = loadResult();
+  const oldResults = saved && h("div", { class: "old-results" },
+    h("button", {
+      class: "link", type: "button",
+      onclick: () => { state.name = cleanName(saved.name); state.chosen = saved.chosen; state.stage = "result"; render(); },
+    }, "i don't care, take me to my old results", ARROW_RIGHT())
+  );
+
+  mount(
+    h("h1", null, QUIZ.title),
+    h("p", { class: "lede" }, QUIZ.intro),
+    h("div", { class: "field" },
+      h("label", { for: "name" }, "your name"),
+      input
+    ),
+    h("div", { class: "start-actions" }, start, oldResults || null)
+  );
+  input.focus();
+}
+
+function renderQuestion() {
+  const total = QUIZ.questions.length;
+  const i = state.index;
+  const question = QUIZ.questions[i];
+  const multiple = !!question.multiple;
+  const limit = typeof question.multiple === "number" ? question.multiple : null;
+  const cap = limit || question.max || null;
+  const ready = () => (limit ? selected.size === limit : selected.size > 0);
+  const isLast = i === total - 1;
+  const selected = new Set(state.chosen[i] || []);
+
+  const labelText = () =>
+    question.tooMany && selected.size > question.tooMany.above ? question.tooMany.label : (isLast ? "see results" : "next");
+  const nextLabel = h("span", null, labelText());
+
+  const next = h("button", {
+    class: "btn", type: "button", disabled: !ready(),
+    onclick: () => {
+      if (!ready()) return;
+      if (!isLast) { state.index++; renderQuestion(); }
+      else { state.stage = "result"; saveResult(); render(); }
+    },
+  }, nextLabel, ARROW_RIGHT());
+
+  const buttons = question.answers.map((a, ai) =>
+    h("button", {
+      class: "answer" + (multiple ? " multi" : ""), type: "button",
+      role: multiple ? "checkbox" : "radio",
+      "aria-checked": selected.has(ai) ? "true" : "false",
+    }, h("span", { class: "box" }, CHECK()), h("span", null, a.text))
+  );
+
+  buttons.forEach((btn, ai) => {
+    btn.addEventListener("click", () => {
+      const was = new Set(selected);
+      if (selected.has(ai)) selected.delete(ai);
+      else {
+        if (!multiple) selected.clear();
+        else if (question.answers[ai].exclusive) selected.clear();
+        else {
+          [...selected].forEach(k => { if (question.answers[k].exclusive) selected.delete(k); });
+          if (cap && selected.size >= cap) selected.delete(selected.values().next().value);
+        }
+        selected.add(ai);
+      }
+      state.chosen[i] = [...selected].sort((x, y) => x - y);
+      buttons.forEach(b => b.classList.remove("registered", "unregistered"));
+      void app.offsetWidth;
+      buttons.forEach((b, bi) => {
+        const on = selected.has(bi);
+        b.setAttribute("aria-checked", on ? "true" : "false");
+        if (on && !was.has(bi)) b.classList.add("registered");
+        if (!on && was.has(bi)) b.classList.add("unregistered");
+      });
+      next.disabled = !ready();
+      nextLabel.textContent = labelText();
+    });
+  });
+
+  const back = i === 0
+    ? h("button", {
+        class: "link", type: "button",
+        onclick: () => { state.stage = "start"; state.index = 0; state.chosen = []; render(); },
+      }, CROSS(), "i quit")
+    : h("button", {
+        class: "link", type: "button",
+        onclick: () => { state.index--; renderQuestion(); },
+      }, ARROW_LEFT(), "back");
+
+  mount(
+    h("div", { class: "progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(total), "aria-valuenow": String(i + 1) },
+      h("div", { style: `width:${((i + 1) / total) * 100}%` })),
+    h("p", { class: "counter" }, `question ${i + 1} of ${total}`),
+    h("h2", { class: "question" }, question.text),
+    multiple ? h("p", { class: "hint" }, limit ? `pick ${limit}` : cap ? `pick up to ${cap}` : "select all that apply") : null,
+    h("div", { class: "answers", role: multiple ? "group" : "radiogroup", "aria-label": question.text }, buttons),
+    h("div", { class: "nav" }, back, next)
+  );
+}
+
+function radar(results) {
+  const N = results.length, cx = 220, cy = 210, R = 112;
+  const angle = i => -Math.PI / 2 + (i * 2 * Math.PI) / N;
+  const pt = (i, r) => [cx + r * Math.cos(angle(i)), cy + r * Math.sin(angle(i))];
+  const f = n => n.toFixed(1);
+  let out = `<svg viewBox="0 0 440 420" role="img" aria-label="radar chart of your traits">`;
+
+  [0.25, 0.5, 0.75, 1].forEach(k => {
+    out += `<polygon points="${results.map((_, i) => pt(i, R * k).map(f).join(",")).join(" ")}" fill="none" stroke="var(--line)" stroke-width="1"/>`;
+  });
+  results.forEach((_, i) => {
+    const [x, y] = pt(i, R);
+    out += `<line x1="${cx}" y1="${cy}" x2="${f(x)}" y2="${f(y)}" stroke="var(--line)" stroke-width="1"/>`;
+  });
+  out += `<polygon points="${results.map((r, i) => pt(i, (R * r.percent) / 100).map(f).join(",")).join(" ")}" fill="var(--accent)" fill-opacity="0.16" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+  results.forEach((r, i) => {
+    const [dx, dy] = pt(i, (R * r.percent) / 100);
+    out += `<circle cx="${f(dx)}" cy="${f(dy)}" r="5" fill="${r.color}" stroke="var(--bg)" stroke-width="1.5"/>`;
+    const [lx, ly] = pt(i, R + 22);
+    const c = Math.cos(angle(i)), sn = Math.sin(angle(i));
+    const anchor = c > 0.2 ? "start" : c < -0.2 ? "end" : "middle";
+    const y = ly + sn * 10;
+    out += `<text x="${f(lx)}" y="${f(y)}" text-anchor="${anchor}" font-size="14" font-weight="600" fill="var(--ink)">${r.name}</text>`;
+    out += `<text x="${f(lx)}" y="${f(y + 15)}" text-anchor="${anchor}" font-size="12" fill="var(--muted)">${r.percent}%</text>`;
+  });
+  return svg(out + "</svg>");
+}
+
+function renderResults() {
+  const byOrder = computeResults();
+  const results = [...byOrder].sort((a, b) => b.percent - a.percent);
+  const top = results[0];
+
+  mount(
+    h("div", { class: "results-head" },
+      h("h1", null, `${state.name}, here are your results`),
+      h("p", { class: "top-line" }, "your highest trait is ",
+        h("strong", { style: `color:${top.color}` }, top.name), ` at ${top.percent}%.`)
+    ),
+    h("div", { class: "cats" },
+      results.map(r =>
+        h("div", { class: "cat" },
+          h("div", { class: "cat-row" },
+            h("span", { class: "cat-name" }, h("span", { class: "dot", style: `background:${r.color}` }), r.name),
+            h("span", { class: "cat-pct" }, `${r.percent}%`)
+          ),
+          h("div", { class: "bar", role: "img", "aria-label": `${r.name}: ${r.percent} percent` },
+            h("div", { style: `width:${r.percent}%; background:${r.color}` })),
+          h("p", { class: "cat-desc" }, r.description)
+        )
+      )
+    ),
+    h("div", { class: "radar" }, radar(byOrder)),
+    h("div", { class: "results-actions" },
+      h("button", {
+        class: "btn ghost", type: "button",
+        onclick: () => { state.stage = "start"; state.index = 0; state.chosen = []; render(); },
+      }, "take it again")
+    )
+  );
+}
+
+function render() {
+  if (state.stage === "start") renderStart();
+  else if (state.stage === "quiz") renderQuestion();
+  else renderResults();
+}
+
+document.addEventListener("keydown", e => {
+  if (state.stage !== "quiz" || e.target.tagName === "INPUT") return;
+  const n = e.key === "0" ? 10 : parseInt(e.key, 10);
+  if (!n) return;
+  const btn = app.querySelectorAll(".answer")[n - 1];
+  if (btn) btn.click();
+});
+
+render();
+</script>
+</body>
+</html>
