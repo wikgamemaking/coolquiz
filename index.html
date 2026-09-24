@@ -192,16 +192,19 @@
   .cat-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
   .cat-name { font-weight: 600; }
   .cat-pct { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .cat.top .cat-pct { font-size: 23px; line-height: 1; }
   .bar { height: 8px; background: var(--track); border-radius: 4px; margin: 8px 0 8px; overflow: hidden; }
-  .bar > div { height: 100%; background: var(--accent); }
+  .bar > div { height: 100%; background: var(--accent); transform-origin: left; }
+  .cat.pre .bar > div { transform: scaleX(0); }
+  .cat.pre .cat-name, .cat.pre .cat-desc { opacity: 0; }
   .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-  .radar { margin-top: 44px; }
-  .radar svg { display: block; width: 100%; max-width: 440px; margin: 0 auto; }
+  .radar { margin-top: 40px; }
+  .radar svg { display: block; width: 100%; margin: 0 auto; }
   .radar text { font-family: inherit; }
   .cat-desc { font-size: 15px; color: var(--muted); }
   .results-actions { margin-top: 44px; text-align: right; }
 
-  .review { margin-top: 44px; border-top: 1px solid var(--line); }
+  .review { margin-top: 40px; border-top: 1px solid var(--line); }
   .review summary {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     padding: 16px 0;
@@ -212,7 +215,8 @@
   .review summary::-webkit-details-marker { display: none; }
   .review summary:hover { color: var(--ink); }
   .review summary svg { flex: none; transition: transform 160ms ease-out; }
-  .review[open] summary svg { transform: rotate(180deg); }
+  .review.is-open summary svg { transform: rotate(180deg); }
+  .review-body { overflow: hidden; }
   .review-row { display: grid; grid-template-columns: 2em 1fr; gap: 0 4px; padding: 14px 0; border-top: 1px solid var(--line); }
   .review-n { font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .review-q { font-size: 15px; color: var(--muted); }
@@ -997,12 +1001,15 @@ function renderQuestion() {
   );
 }
 
+const RADAR_CX = 250, RADAR_CY = 230;
 function radar(results) {
-  const N = results.length, cx = 220, cy = 210, R = 112;
+  const N = results.length, cx = RADAR_CX, cy = RADAR_CY, R = 140;
   const angle = i => -Math.PI / 2 + (i * 2 * Math.PI) / N;
   const pt = (i, r) => [cx + r * Math.cos(angle(i)), cy + r * Math.sin(angle(i))];
   const f = n => n.toFixed(1);
-  let out = `<svg viewBox="0 0 440 420" role="img" aria-label="${t().radarLabel}">`;
+  const small = window.innerWidth < 480;
+  const fsName = small ? 18 : 15, fsPct = small ? 15 : 13;
+  let out = `<svg viewBox="0 0 500 460" role="img" aria-label="${t().radarLabel}"><g>`;
 
   [0.25, 0.5, 0.75, 1].forEach(k => {
     out += `<polygon points="${results.map((_, i) => pt(i, R * k).map(f).join(",")).join(" ")}" fill="none" stroke="var(--line)" stroke-width="1"/>`;
@@ -1011,18 +1018,123 @@ function radar(results) {
     const [x, y] = pt(i, R);
     out += `<line x1="${cx}" y1="${cy}" x2="${f(x)}" y2="${f(y)}" stroke="var(--line)" stroke-width="1"/>`;
   });
-  out += `<polygon points="${results.map((r, i) => pt(i, (R * r.percent) / 100).map(f).join(",")).join(" ")}" fill="var(--accent)" fill-opacity="0.16" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+  let data = `<polygon points="${results.map((r, i) => pt(i, (R * r.percent) / 100).map(f).join(",")).join(" ")}" fill="var(--accent)" fill-opacity="0.16" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+  let labels = "";
   results.forEach((r, i) => {
     const [dx, dy] = pt(i, (R * r.percent) / 100);
-    out += `<circle cx="${f(dx)}" cy="${f(dy)}" r="5" fill="${r.color}" stroke="var(--bg)" stroke-width="1.5"/>`;
+    data += `<circle cx="${f(dx)}" cy="${f(dy)}" r="5" fill="${r.color}" stroke="var(--bg)" stroke-width="1.5"/>`;
     const [lx, ly] = pt(i, R + 22);
     const c = Math.cos(angle(i)), sn = Math.sin(angle(i));
     const anchor = c > 0.2 ? "start" : c < -0.2 ? "end" : "middle";
     const y = ly + sn * 10;
-    out += `<text x="${f(lx)}" y="${f(y)}" text-anchor="${anchor}" font-size="14" font-weight="600" fill="var(--ink)">${catName(r)}</text>`;
-    out += `<text x="${f(lx)}" y="${f(y + 15)}" text-anchor="${anchor}" font-size="12" fill="var(--muted)">${r.percent}%</text>`;
+    labels += `<text x="${f(lx)}" y="${f(y)}" text-anchor="${anchor}" font-size="${fsName}" font-weight="600" fill="var(--ink)">${catName(r)}</text>`;
+    labels += `<text x="${f(lx)}" y="${f(y + fsPct + 3)}" text-anchor="${anchor}" font-size="${fsPct}" fill="var(--muted)">${r.percent}%</text>`;
   });
-  return svg(out + "</svg>");
+  return svg(out + `<g class="rd-data">${data}</g><g class="rd-labels">${labels}</g></g></svg>`);
+}
+
+/* Crop the viewBox to the drawn content (symmetric horizontally so the chart stays centred). */
+function fitRadar(el) {
+  try {
+    const g = el.querySelector("g"), b = g.getBBox();
+    if (!b.width || !b.height) return;
+    const cx = RADAR_CX, pad = 4;
+    const half = Math.max(cx - b.x, b.x + b.width - cx) + pad;
+    el.setAttribute("viewBox", `${f1(cx - half)} ${f1(b.y - pad)} ${f1(half * 2)} ${f1(b.height + pad * 2)}`);
+  } catch (e) {}
+}
+const f1 = n => n.toFixed(1);
+
+/* Reveal: bars fill top to bottom on load; radar points stretch out one at a time when scrolled into view. */
+let skipReveal = false;
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function setupReveal() {
+  const cats = [...app.querySelectorAll(".cat.pre")];
+  if (!cats.length) return;
+  const DELAY = 150, GAP = 110;
+  const ease = x => 1 - Math.pow(1 - clamp01(x), 3);
+  const parts = cats.map(cat => ({
+    cat,
+    fill: cat.querySelector(".bar > div"),
+    pct: cat.querySelector(".cat-pct"),
+    name: cat.querySelector(".cat-name"),
+    desc: cat.querySelector(".cat-desc"),
+  }));
+  const t0 = performance.now();
+  const step = now => {
+    let done = true;
+    parts.forEach((c, i) => {
+      const ms = now - t0 - DELAY - i * GAP;
+      const bar = ease(ms / 900), name = ease(ms / 500), desc = ease((ms - 250) / 600);
+      c.fill.style.transform = `scaleX(${bar})`;
+      c.pct.textContent = `${Math.round(bar * Number(c.pct.dataset.pct))}%`;
+      c.name.style.opacity = String(name);
+      c.name.style.transform = `translateX(${(name - 1) * 18}px)`;
+      c.desc.style.opacity = String(desc);
+      c.desc.style.transform = `translateY(${(desc - 1) * 10}px)`;
+      c.desc.style.clipPath = `inset(0 0 ${(1 - desc) * 100}% 0)`;
+      if (ms < 250 + 600 || ms < 900) done = false;
+    });
+    if (!done) return requestAnimationFrame(step);
+    parts.forEach(c => {
+      c.cat.classList.remove("pre");
+      c.fill.style.transform = "";
+      c.name.removeAttribute("style");
+      c.desc.removeAttribute("style");
+    });
+  };
+  requestAnimationFrame(step);
+  setupRadarReveal();
+}
+
+function setupRadarReveal() {
+  if (!("IntersectionObserver" in window)) return;
+  const chart = app.querySelector(".radar svg");
+  const poly = chart.querySelector(".rd-data polygon");
+  const dots = [...chart.querySelectorAll(".rd-data circle")];
+  const texts = [...chart.querySelectorAll(".rd-labels text")]; // name + percent per point
+  const end = poly.getAttribute("points").split(" ").map(p => p.split(",").map(Number));
+  const STAGGER = 280, DUR = 550, TOTAL = STAGGER * (end.length - 1) + DUR;
+  const clamp = x => Math.max(0, Math.min(1, x));
+
+  const draw = ms => {
+    const pts = end.map(([x, y], i) => {
+      const lp = clamp((ms - i * STAGGER) / DUR), e = 1 - Math.pow(1 - lp, 3);
+      const px = RADAR_CX + (x - RADAR_CX) * e, py = RADAR_CY + (y - RADAR_CY) * e;
+      dots[i].setAttribute("cx", px.toFixed(1));
+      dots[i].setAttribute("cy", py.toFixed(1));
+      dots[i].style.opacity = String(clamp(lp * 6));
+      const fade = String(clamp(lp * 2));
+      texts[2 * i].style.opacity = fade;
+      texts[2 * i + 1].style.opacity = fade;
+      return `${px.toFixed(1)},${py.toFixed(1)}`;
+    });
+    poly.setAttribute("points", pts.join(" "));
+    poly.style.opacity = ms > 0 ? "1" : "0";
+  };
+  const finish = () => {
+    poly.setAttribute("points", end.map(p => p.join(",")).join(" "));
+    poly.style.opacity = "";
+    dots.forEach(d => { d.style.opacity = ""; });
+    texts.forEach(x => { x.style.opacity = ""; });
+  };
+
+  draw(0);
+  const io = new IntersectionObserver(entries => {
+    if (!entries.some(e => e.isIntersecting)) return;
+    io.disconnect();
+    const t0 = performance.now();
+    const step = now => {
+      const ms = now - t0;
+      if (ms >= TOTAL) { draw(TOTAL); finish(); return; }
+      draw(ms);
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, { threshold: 0.6, rootMargin: "0px 0px -6% 0px" });
+  io.observe(chart);
 }
 
 function renderAnswerReview() {
@@ -1039,13 +1151,29 @@ function renderAnswerReview() {
     );
   });
   const label = h("span", null, state.reviewOpen ? t().reviewHide : t().reviewShow);
-  const details = h("details", { class: "review", open: state.reviewOpen },
-    h("summary", null, label, CHEVRON()),
-    rows
-  );
-  details.addEventListener("toggle", () => {
-    state.reviewOpen = details.open;
-    label.textContent = details.open ? t().reviewHide : t().reviewShow;
+  const summary = h("summary", null, label, CHEVRON());
+  const body = h("div", { class: "review-body" }, rows);
+  const details = h("details", { class: "review" + (state.reviewOpen ? " is-open" : ""), open: state.reviewOpen },
+    summary, body);
+
+  let running = null;
+  summary.addEventListener("click", e => {
+    e.preventDefault(); // <details> would snap open/shut; animate it ourselves
+    const opening = !details.classList.contains("is-open");
+    const from = details.open ? body.getBoundingClientRect().height : 0; // current height, also mid-animation
+    if (running) running.cancel();
+    details.classList.toggle("is-open", opening);
+    state.reviewOpen = opening;
+    label.textContent = opening ? t().reviewHide : t().reviewShow;
+    if (opening) details.open = true;
+    if (reducedMotion()) { details.open = opening; return; }
+    const full = body.scrollHeight;
+    const to = opening ? full : 0;
+    running = body.animate(
+      [{ height: `${from}px`, opacity: full ? from / full : 0 }, { height: `${to}px`, opacity: opening ? 1 : 0 }],
+      { duration: 320, easing: "cubic-bezier(0.22, 0.7, 0.2, 1)" }
+    );
+    running.onfinish = () => { running = null; if (!opening) details.open = false; };
   });
   return details;
 }
@@ -1054,6 +1182,7 @@ function renderResults() {
   const byOrder = computeResults();
   const results = [...byOrder].sort((a, b) => b.percent - a.percent);
   const top = results[0];
+  const reveal = !skipReveal && !reducedMotion();
 
   mount(
     h("div", { class: "results-head" },
@@ -1063,10 +1192,10 @@ function renderResults() {
     ),
     h("div", { class: "cats" },
       results.map(r =>
-        h("div", { class: "cat" },
+        h("div", { class: "cat" + (r === top ? " top" : "") + (reveal ? " pre" : "") },
           h("div", { class: "cat-row" },
             h("span", { class: "cat-name" }, h("span", { class: "dot", style: `background:${r.color}` }), catName(r)),
-            h("span", { class: "cat-pct" }, `${r.percent}%`)
+            h("span", { class: "cat-pct", "data-pct": String(r.percent), "aria-live": "off" }, reveal ? "0%" : `${r.percent}%`)
           ),
           h("div", { class: "bar", role: "img", "aria-label": `${catName(r)}: ${r.percent} percent` },
             h("div", { style: `width:${r.percent}%; background:${r.color}` })),
@@ -1083,6 +1212,8 @@ function renderResults() {
       }, t().takeAgain)
     )
   );
+  fitRadar(app.querySelector(".radar svg"));
+  setupReveal();
 }
 
 function render() {
@@ -1099,7 +1230,9 @@ langBtn.addEventListener("click", () => {
   document.documentElement.lang = lang;
   document.title = t().title;
   const y = window.scrollY;
+  skipReveal = true;
   render();
+  skipReveal = false;
   window.scrollTo(0, y);
 });
 langBtn.setAttribute("aria-label", "Passer en français");
