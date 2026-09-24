@@ -52,10 +52,17 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
+  .topbar {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20px 24px 0;
+    display: flex;
+    justify-content: flex-end;
+  }
   main {
     max-width: 560px;
     margin: 0 auto;
-    padding: 56px 24px 72px;
+    padding: 32px 24px 72px;
   }
 
   h1, h2, p { margin: 0; }
@@ -86,6 +93,18 @@
   .link svg { flex: none; }
   .link:hover { color: var(--ink); }
   .link:disabled { visibility: hidden; }
+  .lang-toggle {
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .lang-toggle:hover { color: var(--ink); background: var(--hover); }
 
   .field { margin-top: 36px; }
   label { display: block; font-size: 15px; color: var(--muted); margin-bottom: 8px; }
@@ -100,8 +119,8 @@
   input[type="text"]:focus { border-color: var(--ink); outline: none; }
   input[type="text"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .start-actions { margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
-  .old-results { margin-left: auto; text-align: right; }
-  .old-results .link { font-size: 15px; }
+  .old-results { flex: 1 1 180px; min-width: 0; text-align: right; }
+  .old-results .link { font-size: 15px; text-align: right; justify-content: flex-end; max-width: 100%; }
 
   .progress { height: 2px; background: var(--track); margin: 0 0 28px; }
   .progress > div { height: 100%; background: var(--ink); }
@@ -182,8 +201,26 @@
   .cat-desc { font-size: 15px; color: var(--muted); }
   .results-actions { margin-top: 44px; text-align: right; }
 
+  .review { margin-top: 44px; border-top: 1px solid var(--line); }
+  .review summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 16px 0;
+    color: var(--muted);
+    cursor: pointer;
+    list-style: none;
+  }
+  .review summary::-webkit-details-marker { display: none; }
+  .review summary:hover { color: var(--ink); }
+  .review summary svg { flex: none; transition: transform 160ms ease-out; }
+  .review[open] summary svg { transform: rotate(180deg); }
+  .review-row { padding: 14px 0; border-top: 1px solid var(--line); }
+  .review-q { font-size: 15px; color: var(--muted); }
+  .review-a { margin-top: 2px; }
+  @media (prefers-reduced-motion: reduce) { .review summary svg { transition: none; } }
+
   @media (max-width: 480px) {
-    main { padding: 36px 20px 56px; }
+    .topbar { padding: 16px 20px 0; }
+    main { padding: 24px 20px 56px; }
     h1 { font-size: 24px; }
     .question { font-size: 21px; }
   }
@@ -195,21 +232,225 @@
 <script>
 
 const QUIZ = {
-  title: "personality quiz",
-  intro: "30 questions (approx. 5mn). have funnnnn :)",
-
   categories: [
-    { id: "cheerful",    name: "cheerful",    color: "#f5b400", description: "hey leave some whimsy for the rest of us" },
-    { id: "creative",    name: "creative",    color: "#9b5de5", description: "your mind has wonderful ideas and i wanna hear them" },
-    { id: "organized",   name: "organized",   color: "#00a6a6", description: "gotta keep everything clean and tidy, hm?" },
-    { id: "adventurous", name: "adventurous", color: "#f25c2a", description: "you LOVE doing crazy shit and i respect that" },
-    { id: "caring",      name: "caring",      color: "#ff5d8f", description: "awhhhhh you're such a cutie pie, thank you for being you" },
-    { id: "curious",     name: "curious",     color: "#3a86ff", description: "inquisitive ahh 😭" },
+    { id: "cheerful",    color: "#f5b400" },
+    { id: "creative",    color: "#9b5de5" },
+    { id: "organized",   color: "#00a6a6" },
+    { id: "adventurous", color: "#f25c2a" },
+    { id: "caring",      color: "#ff5d8f" },
+    { id: "curious",     color: "#3a86ff" },
   ],
 };
 
+/* ---------- Language: UI strings + content translations ---------- */
+let lang = "en";
+
+const UI = {
+  en: {
+    title: "personality quiz",
+    intro: "30 questions (approx. 5mn). have funnnnn :)",
+    yourName: "your name",
+    namePlaceholder: "enter your awesome name here",
+    start: "start",
+    oldResults: "i don't care, take me to my old results",
+    question: (i, total) => `question ${i} of ${total}`,
+    selectAll: "select all that apply",
+    pickN: n => `pick ${n}`,
+    pickUpTo: n => `pick up to ${n}`,
+    next: "next",
+    seeResults: "see results",
+    back: "back",
+    quit: "i quit",
+    resultsHeading: name => `${name}, here are your results`,
+    topLinePrefix: "your highest trait is ",
+    topLineSuffix: pct => ` at ${pct}%.`,
+    takeAgain: "take it again",
+    radarLabel: "radar chart of your traits",
+    reviewShow: "see your answers",
+    reviewHide: "hide your answers",
+    langToggle: "FR",
+  },
+  fr: {
+    title: "quiz de personnalité",
+    intro: "30 questions (environ 5 min). amuse-toi biennnnn :)",
+    yourName: "ton prénom",
+    namePlaceholder: "entre ton prénom trop stylé ici",
+    start: "commencer",
+    oldResults: "m'en fout, montre-moi mes anciens résultats",
+    question: (i, total) => `question ${i} sur ${total}`,
+    selectAll: "coche tout ce qui s'applique",
+    pickN: n => `choisis-en ${n}`,
+    pickUpTo: n => `choisis-en jusqu'à ${n}`,
+    next: "suivant",
+    seeResults: "voir les résultats",
+    back: "retour",
+    quit: "j'abandonne",
+    resultsHeading: name => `${name}, voici tes résultats`,
+    topLinePrefix: "ton trait dominant est ",
+    topLineSuffix: pct => ` à ${pct}%.`,
+    takeAgain: "recommencer",
+    radarLabel: "graphique radar de tes traits",
+    reviewShow: "voir tes réponses",
+    reviewHide: "masquer tes réponses",
+    langToggle: "EN",
+  },
+};
+const t = () => UI[lang];
+
+const CATS_FR = {
+  cheerful:    { name: "joyeux",     description: "hé, laisse un peu de fantaisie pour les autres" },
+  creative:    { name: "créatif",    description: "ton esprit déborde d'idées géniales et je veux toutes les entendre" },
+  organized:   { name: "organisé",   description: "faut que tout soit propre et rangé, hein ?" },
+  adventurous: { name: "aventurier", description: "tu ADORES faire des trucs de fou et je respecte ça" },
+  caring:      { name: "attentionné",description: "awhhhh t'es trop mignon(ne), merci d'être toi" },
+  curious:     { name: "curieux",    description: "bro est intéressé 😭" },
+};
+const CATS_EN = {
+  cheerful:    { name: "cheerful",    description: "hey leave some whimsy for the rest of us" },
+  creative:    { name: "creative",    description: "your mind has wonderful ideas and i wanna hear them" },
+  organized:   { name: "organized",   description: "gotta keep everything clean and tidy, hm?" },
+  adventurous: { name: "adventurous", description: "you LOVE doing crazy shit and i respect that" },
+  caring:      { name: "caring",      description: "awhhhhh you're such a cutie pie, thank you for being you" },
+  curious:     { name: "curious",     description: "inquisitive ahh 😭" },
+};
+const catName = cat => (lang === "fr" ? CATS_FR : CATS_EN)[cat.id].name;
+const catDesc = cat => (lang === "fr" ? CATS_FR : CATS_EN)[cat.id].description;
+
 const q = (text, answers, multiple = false, extra = {}) =>
   ({ text, answers, multiple, ...extra });
+
+/* French translations, positional: QFR[i] mirrors QUIZ.questions[i].answers order exactly. */
+const QFR = [
+  { text: "j'aime souvent traîner avec mes amis", answers: [
+    "OUAIIIS J'ADORE LES GENS", "ouais carrément", "euh pas trop en vrai",
+    "mes amis me détestent un peu en vrai", "j'ai pas d'amis :(",
+  ]},
+  { text: "tu fais quoi pendant ton temps libre ?", tooMany: "putain mais ça va pas", answers: [
+    "lire/écrire", "écouter de la musique", "jeux vidéo", "regarder des films/séries",
+    "réviser", "sport", "autre",
+  ]},
+  { text: "comment est ta relation avec ta famille ?", answers: [
+    "très bonne", "ça va", "c'est compliqué", "je leur parle pas vraiment beaucoup", "horrible",
+  ]},
+  { text: "c'était quoi ton métier de rêve quand t'étais petit(e) ?", answers: [
+    "infirmier(ère)/vétérinaire", "pompier", "policier", "astronaute", "professeur",
+    "athlète", "acteur/actrice", "scientifique", "artiste", "autre",
+  ]},
+  { text: "c'est toi qui organises une sortie ? tu fais quoi", answers: [
+    "on part en rando", "shopping au centre commercial !", "aller au musée", "aller au zoo",
+    "on va au bowling :p", "salle d'arcade :o", "pourquoi c'est moi le/la responsable 😭",
+  ]},
+  { text: "tu DOIS faire du réseautage pour le boulot. t'arrives dans une salle bondée, tu fais quoi ?", answers: [
+    "je fonce DIRECT vers quelqu'un que je connais", "je me balade et rencontre de nouvelles personnes",
+    "je pleure, pourquoi je suis même là", "je m'en fous des gens, montre-moi le buffet",
+  ]},
+  { text: "travail en équipe ! t'es quel genre de personne dans ce cas ?", answers: [
+    "le/la leader : j'essaie de tout faire pour que le projet avance",
+    "le/la conciliant(e) : ce que le groupe choisit, ça me va, je suis ok avec tout",
+    "le/la négociateur/trice : j'essaie de faire en sorte que les idées de tout le monde s'accordent pour que le projet soit un peu de chacun",
+    "le franc-tireur : j'emmerde tout le monde, je fais mon propre truc",
+  ]},
+  { text: "choisis ton arme magique", answers: [
+    "un sceptre qui tire des éclairs qui rangent tout", "un micro-ondes qui te donne la nourriture que tu veux",
+    "un carnet magique qui te donne toujours des idées", "une épée qui tranche tout",
+    "tout ça c'est nul, donne-moi un ipod",
+  ]},
+  { text: "enlève deux choses de la terre là tout de suite", answers: [
+    "l'homme président orange", "les impôts", "la flemme de rien faire", "le syndrome de la page blanche",
+    "les embouteillages", "les moustiques", "les podcasteurs débiles",
+  ]},
+  { text: "quel est ton animal spirituel", answers: [
+    "le hibou", "le chat", "le chien-chien :)", "un oiseau. n'importe lequel. un truc qui vole",
+    "le panda roux :D", "un truc obscur genre un gecko ou un truc du genre",
+  ]},
+  { text: "si tu devais garder un seul réseau social en vie", answers: [
+    "facebook", "whatsapp", "instagram", "snapchat", "twitter", "discord", "youtube",
+    "imessage, je fais pas de réseaux sociaux",
+  ]},
+  { text: "choisis un jeu à emporter sur une île déserte", answers: [
+    "stardew valley (#autisme)", "gta v", "fortnite", "minecraft",
+    "n'importe quel jeu tycoon sur roblox", "rust", "genshin impact", "cyberpunk 2077",
+  ]},
+  { text: "comment tu dors", answers: [
+    "sur le dos", "sur le côté", "sur le ventre (espèce de putain de psychopathe????)",
+    "une jambe dehors, une sous la couette", "en étoile", "je sais pas, je finis souvent par terre",
+  ]},
+  { text: "l'usine à super-pouvoirs vient d'ouvrir, tu choisis quoi", answers: [
+    "voler", "la super vitesse", "l'invisibilité", "résoudre les problèmes à la vitesse de l'éclair",
+    "ne plus avoir besoin de dormir", "la force surhumaine", "réussir à brancher une clé usb du premier coup",
+  ]},
+  { text: "le père noël veut savoir ce que tu veux", answers: [
+    "une voiture télécommandée, vrooom", "toute la discographie de ton artiste préféré en vinyle",
+    "une carte cadeau steam", "une peluche trop mignonne", "un pull stylé", "un chaton",
+    "dix balles rebondissantes", "un nouveau câble de chargeur",
+  ]},
+  { text: "choisis ta/tes série(s) préférée(s)", answers: [
+    "umbrella academy", "one piece", "outer banks", "euphoria", "arcane", "smiling friends",
+    "family guy", "the amazing world of gumball", "adventure time", "the big bang theory",
+    "the office", "twilight", "death note", "game of thrones", "autre (j'ai pas de goût)",
+  ]},
+  { text: "artiste(s) préféré(s) ?", answers: [
+    "lana del rey", "pinkpantheress", "blackpink", "tyler the creator", "a$ap rocky",
+    "the marias", "malcolm todd", "billie eilish", "the weeknd", "daniel caesar",
+    "don toliver", "childish gambino", "mac demarco", "the neighbourhood", "steve lacy",
+    "frank ocean", "beach house", "euhhhhh (autre)",
+  ]},
+  { text: "bon maintenant choisis un film n'importe lequel VAS-Y", answers: [
+    "la la land (2016)", "spiderman: homecoming (2017)", "backrooms (2026)", "zootopia (2016)",
+    "fight club (1999)", "coraline (2009)", "back to the future (1985)", "beautiful boy (2018)",
+    "interstellar (2014)", "howl's moving castle (2004)",
+  ]},
+  { text: "hé choisis une couleur", answers: [
+    "bleu profond", "rouge bordeaux", "jaune soleil", "vert forêt", "orange automne",
+    "violet lavande", "blanc pur",
+  ]},
+  { text: "tu peux avoir un objet tech stylé des années 80. tu choisis quoi ?", answers: [
+    "un walkman sony", "un boombox", "un magnétoscope avec des cassettes vhs", "la NES",
+    "des verres collector édition spéciale fast-food", "un polaroid sun 600", "un apple macintosh (1984)",
+  ]},
+  { text: "comment tu révises ?", answers: [
+    "je mets de la musique et je me concentre à fond", "pas de musique, stylo et papier, je fonce à sec",
+    "je fais des fiches et des auto-tests", "je me fais aider par mes amis ou ma famille",
+    "je procrastine sans arrêt, smh",
+  ]},
+  { text: "choisis un type de pâtes", answers: [
+    "spaghetti bolognaise", "carbonara", "pesto", "fettucine alfredo", "lasagnes",
+    "mac and cheese (macaronis au fromage)",
+  ]},
+  { text: "à quoi ressemble ta chambre ?", answers: [
+    "tout est bien rangé et propre", "bon un peu en bazar mais ça va",
+    "au moins c'est propre, mais pas rangé", "y'a des trucs PARTOUT mais je promets que je vais ranger bientôt",
+    "les peluches ont envahi ma chambre",
+  ]},
+  { text: "quel est ton langage de l'amour ?", answers: [
+    "les cadeaux", "les paroles valorisantes", "le contact physique", "le temps de qualité",
+    "les services rendus",
+  ]},
+  { text: "saison préférée ?", answers: [
+    "printemps", "été", "automne", "hiver",
+  ]},
+  { text: "comment tu gères une deadline ?", answers: [
+    "je commence tôt et je finis tôt", "j'utilise un agenda et des post-it pour tout suivre",
+    "je panique à 23h59 pile", "quelle deadline",
+  ]},
+  { text: "tu peux apprendre n'importe quelle compétence instantanément", answers: [
+    "savoir jouer de n'importe quel instrument", "toutes les langues", "cuisiner comme un chef étoilé",
+    "peindre super bien", "savoir coder",
+  ]},
+  { text: "si ta vie était un film, ce serait quel genre ?", answers: [
+    "comédie romantique", "horreur", "drame indépendant", "action", "comédie musicale animée",
+    "film initiatique",
+  ]},
+  { text: "où voudrais-tu vivre ?", answers: [
+    "un appart, grande ville", "une belle maison, petite ville", "un chalet cosy dans les bois",
+    "une maison au bord de la mer", "à bord de l'iss",
+  ]},
+  { text: "dernière question ! si t'étais un dessert, tu serais lequel ?", answers: [
+    "un fondant au chocolat", "un sundae avec des toppings trop mignons :p", "une crème brûlée",
+    "un muffin au chocolat", "des macarons", "un mochi",
+  ]},
+];
+
 
 QUIZ.questions = [
   q("i like hanging out with friends often", [
@@ -513,7 +754,7 @@ QUIZ.questions = [
 ];
 
 const app = document.getElementById("app");
-const state = { stage: "start", name: "", index: 0, chosen: [] };
+const state = { stage: "start", name: "", index: 0, chosen: [], reviewOpen: false };
 
 function h(tag, props, ...kids) {
   const el = document.createElement(tag);
@@ -538,6 +779,7 @@ function svg(markup) {
 const CHECK = () => svg('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>');
 const ARROW_RIGHT = () => svg('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>');
 const CROSS = () => svg('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>');
+const CHEVRON = () => svg('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>');
 const ARROW_LEFT = () => svg('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>');
 
 function mount(...nodes) {
@@ -627,10 +869,10 @@ function loadResult() {
 
 function renderStart() {
   const input = h("input", {
-    type: "text", id: "name", maxlength: String(NAME_MAX), autocomplete: "given-name", placeholder: "enter your awesome name here", spellcheck: "false",
+    type: "text", id: "name", maxlength: String(NAME_MAX), autocomplete: "given-name", placeholder: t().namePlaceholder, spellcheck: "false",
     autofocus: true, value: state.name,
   });
-  const start = h("button", { class: "btn", type: "button", disabled: !state.name.trim() }, "start", ARROW_RIGHT());
+  const start = h("button", { class: "btn", type: "button", disabled: !state.name.trim() }, t().start, ARROW_RIGHT());
 
   const begin = () => {
     const name = cleanName(input.value).trim();
@@ -643,6 +885,7 @@ function renderStart() {
   input.addEventListener("input", () => {
     const cleaned = cleanName(input.value);
     if (cleaned !== input.value) input.value = cleaned;
+    state.name = cleaned;
     start.disabled = !input.value.trim();
   });
   input.addEventListener("keydown", e => { if (e.key === "Enter") begin(); });
@@ -653,14 +896,14 @@ function renderStart() {
     h("button", {
       class: "link", type: "button",
       onclick: () => { state.name = cleanName(saved.name); state.chosen = saved.chosen; state.stage = "result"; render(); },
-    }, "i don't care, take me to my old results", ARROW_RIGHT())
+    }, t().oldResults, ARROW_RIGHT())
   );
 
   mount(
-    h("h1", null, QUIZ.title),
-    h("p", { class: "lede" }, QUIZ.intro),
+    h("h1", null, t().title),
+    h("p", { class: "lede" }, t().intro),
     h("div", { class: "field" },
-      h("label", { for: "name" }, "your name"),
+      h("label", { for: "name" }, t().yourName),
       input
     ),
     h("div", { class: "start-actions" }, start, oldResults || null)
@@ -672,6 +915,9 @@ function renderQuestion() {
   const total = QUIZ.questions.length;
   const i = state.index;
   const question = QUIZ.questions[i];
+  const tr = QFR[i];
+  const qText = lang === "fr" ? tr.text : question.text;
+  const aText = ai => lang === "fr" ? tr.answers[ai] : question.answers[ai].text;
   const multiple = !!question.multiple;
   const limit = typeof question.multiple === "number" ? question.multiple : null;
   const cap = limit || question.max || null;
@@ -680,7 +926,9 @@ function renderQuestion() {
   const selected = new Set(state.chosen[i] || []);
 
   const labelText = () =>
-    question.tooMany && selected.size > question.tooMany.above ? question.tooMany.label : (isLast ? "see results" : "next");
+    question.tooMany && selected.size > question.tooMany.above
+      ? (lang === "fr" ? tr.tooMany : question.tooMany.label)
+      : (isLast ? t().seeResults : t().next);
   const nextLabel = h("span", null, labelText());
 
   const next = h("button", {
@@ -697,7 +945,7 @@ function renderQuestion() {
       class: "answer" + (multiple ? " multi" : ""), type: "button",
       role: multiple ? "checkbox" : "radio",
       "aria-checked": selected.has(ai) ? "true" : "false",
-    }, h("span", { class: "box" }, CHECK()), h("span", null, a.text))
+    }, h("span", { class: "box" }, CHECK()), h("span", null, aText(ai)))
   );
 
   buttons.forEach((btn, ai) => {
@@ -731,19 +979,19 @@ function renderQuestion() {
     ? h("button", {
         class: "link", type: "button",
         onclick: () => { state.stage = "start"; state.index = 0; state.chosen = []; render(); },
-      }, CROSS(), "i quit")
+      }, CROSS(), t().quit)
     : h("button", {
         class: "link", type: "button",
         onclick: () => { state.index--; renderQuestion(); },
-      }, ARROW_LEFT(), "back");
+      }, ARROW_LEFT(), t().back);
 
   mount(
     h("div", { class: "progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(total), "aria-valuenow": String(i + 1) },
       h("div", { style: `width:${((i + 1) / total) * 100}%` })),
-    h("p", { class: "counter" }, `question ${i + 1} of ${total}`),
-    h("h2", { class: "question" }, question.text),
-    multiple ? h("p", { class: "hint" }, limit ? `pick ${limit}` : cap ? `pick up to ${cap}` : "select all that apply") : null,
-    h("div", { class: "answers", role: multiple ? "group" : "radiogroup", "aria-label": question.text }, buttons),
+    h("p", { class: "counter" }, t().question(i + 1, total)),
+    h("h2", { class: "question" }, qText),
+    multiple ? h("p", { class: "hint" }, limit ? t().pickN(limit) : cap ? t().pickUpTo(cap) : t().selectAll) : null,
+    h("div", { class: "answers", role: multiple ? "group" : "radiogroup", "aria-label": qText }, buttons),
     h("div", { class: "nav" }, back, next)
   );
 }
@@ -753,7 +1001,7 @@ function radar(results) {
   const angle = i => -Math.PI / 2 + (i * 2 * Math.PI) / N;
   const pt = (i, r) => [cx + r * Math.cos(angle(i)), cy + r * Math.sin(angle(i))];
   const f = n => n.toFixed(1);
-  let out = `<svg viewBox="0 0 440 420" role="img" aria-label="radar chart of your traits">`;
+  let out = `<svg viewBox="0 0 440 420" role="img" aria-label="${t().radarLabel}">`;
 
   [0.25, 0.5, 0.75, 1].forEach(k => {
     out += `<polygon points="${results.map((_, i) => pt(i, R * k).map(f).join(",")).join(" ")}" fill="none" stroke="var(--line)" stroke-width="1"/>`;
@@ -770,10 +1018,32 @@ function radar(results) {
     const c = Math.cos(angle(i)), sn = Math.sin(angle(i));
     const anchor = c > 0.2 ? "start" : c < -0.2 ? "end" : "middle";
     const y = ly + sn * 10;
-    out += `<text x="${f(lx)}" y="${f(y)}" text-anchor="${anchor}" font-size="14" font-weight="600" fill="var(--ink)">${r.name}</text>`;
+    out += `<text x="${f(lx)}" y="${f(y)}" text-anchor="${anchor}" font-size="14" font-weight="600" fill="var(--ink)">${catName(r)}</text>`;
     out += `<text x="${f(lx)}" y="${f(y + 15)}" text-anchor="${anchor}" font-size="12" fill="var(--muted)">${r.percent}%</text>`;
   });
   return svg(out + "</svg>");
+}
+
+function renderAnswerReview() {
+  const rows = QUIZ.questions.map((question, i) => {
+    const tr = QFR[i];
+    const qText = lang === "fr" ? tr.text : question.text;
+    const aText = ai => lang === "fr" ? tr.answers[ai] : question.answers[ai].text;
+    return h("div", { class: "review-row" },
+      h("p", { class: "review-q" }, qText),
+      (state.chosen[i] || []).map(ai => h("p", { class: "review-a" }, aText(ai)))
+    );
+  });
+  const label = h("span", null, state.reviewOpen ? t().reviewHide : t().reviewShow);
+  const details = h("details", { class: "review", open: state.reviewOpen },
+    h("summary", null, label, CHEVRON()),
+    rows
+  );
+  details.addEventListener("toggle", () => {
+    state.reviewOpen = details.open;
+    label.textContent = details.open ? t().reviewHide : t().reviewShow;
+  });
+  return details;
 }
 
 function renderResults() {
@@ -783,29 +1053,30 @@ function renderResults() {
 
   mount(
     h("div", { class: "results-head" },
-      h("h1", null, `${state.name}, here are your results`),
-      h("p", { class: "top-line" }, "your highest trait is ",
-        h("strong", { style: `color:${top.color}` }, top.name), ` at ${top.percent}%.`)
+      h("h1", null, t().resultsHeading(state.name)),
+      h("p", { class: "top-line" }, t().topLinePrefix,
+        h("strong", { style: `color:${top.color}` }, catName(top)), t().topLineSuffix(top.percent))
     ),
     h("div", { class: "cats" },
       results.map(r =>
         h("div", { class: "cat" },
           h("div", { class: "cat-row" },
-            h("span", { class: "cat-name" }, h("span", { class: "dot", style: `background:${r.color}` }), r.name),
+            h("span", { class: "cat-name" }, h("span", { class: "dot", style: `background:${r.color}` }), catName(r)),
             h("span", { class: "cat-pct" }, `${r.percent}%`)
           ),
-          h("div", { class: "bar", role: "img", "aria-label": `${r.name}: ${r.percent} percent` },
+          h("div", { class: "bar", role: "img", "aria-label": `${catName(r)}: ${r.percent} percent` },
             h("div", { style: `width:${r.percent}%; background:${r.color}` })),
-          h("p", { class: "cat-desc" }, r.description)
+          h("p", { class: "cat-desc" }, catDesc(r))
         )
       )
     ),
     h("div", { class: "radar" }, radar(byOrder)),
+    renderAnswerReview(),
     h("div", { class: "results-actions" },
       h("button", {
         class: "btn ghost", type: "button",
-        onclick: () => { state.stage = "start"; state.index = 0; state.chosen = []; render(); },
-      }, "take it again")
+        onclick: () => { state.stage = "start"; state.index = 0; state.chosen = []; state.reviewOpen = false; render(); },
+      }, t().takeAgain)
     )
   );
 }
@@ -815,6 +1086,20 @@ function render() {
   else if (state.stage === "quiz") renderQuestion();
   else renderResults();
 }
+
+const langBtn = h("button", { class: "lang-toggle", type: "button" }, t().langToggle);
+langBtn.addEventListener("click", () => {
+  lang = lang === "en" ? "fr" : "en";
+  langBtn.textContent = t().langToggle;
+  langBtn.setAttribute("aria-label", lang === "en" ? "Passer en français" : "Switch to English");
+  document.documentElement.lang = lang;
+  document.title = t().title;
+  const y = window.scrollY;
+  render();
+  window.scrollTo(0, y);
+});
+langBtn.setAttribute("aria-label", "Passer en français");
+document.body.insertBefore(h("div", { class: "topbar" }, langBtn), app);
 
 document.addEventListener("keydown", e => {
   if (state.stage !== "quiz" || e.target.tagName === "INPUT") return;
