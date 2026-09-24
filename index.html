@@ -213,7 +213,8 @@
   .review summary:hover { color: var(--ink); }
   .review summary svg { flex: none; transition: transform 160ms ease-out; }
   .review[open] summary svg { transform: rotate(180deg); }
-  .review-row { padding: 14px 0; border-top: 1px solid var(--line); }
+  .review-row { display: grid; grid-template-columns: 2em 1fr; gap: 0 4px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .review-n { font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .review-q { font-size: 15px; color: var(--muted); }
   .review-a { margin-top: 2px; }
   @media (prefers-reduced-motion: reduce) { .review summary svg { transition: none; } }
@@ -300,7 +301,7 @@ const t = () => UI[lang];
 const CATS_FR = {
   cheerful:    { name: "joyeux",     description: "hé, laisse un peu de fantaisie pour les autres" },
   creative:    { name: "créatif",    description: "ton esprit déborde d'idées géniales et je veux toutes les entendre" },
-  organized:   { name: "organisé",   description: "faut que tout soit propre et rangé, hein ?" },
+  organized:   { name: "organisé",   description: "faut que tout soit propre et rangé, hein?" },
   adventurous: { name: "aventurier", description: "tu ADORES faire des trucs de fou et je respecte ça" },
   caring:      { name: "attentionné",description: "awhhhh t'es trop mignon(ne), merci d'être toi" },
   curious:     { name: "curieux",    description: "bro est intéressé 😭" },
@@ -325,26 +326,26 @@ const QFR = [
     "OUAIIIS J'ADORE LES GENS", "ouais carrément", "euh pas trop en vrai",
     "mes amis me détestent un peu en vrai", "j'ai pas d'amis :(",
   ]},
-  { text: "tu fais quoi pendant ton temps libre ?", tooMany: "putain mais ça va pas", answers: [
+  { text: "tu fais quoi pendant ton temps libre?", tooMany: "putain mais ça va pas", answers: [
     "lire/écrire", "écouter de la musique", "jeux vidéo", "regarder des films/séries",
     "réviser", "sport", "autre",
   ]},
-  { text: "comment est ta relation avec ta famille ?", answers: [
+  { text: "comment est ta relation avec ta famille?", answers: [
     "très bonne", "ça va", "c'est compliqué", "je leur parle pas vraiment beaucoup", "horrible",
   ]},
-  { text: "c'était quoi ton métier de rêve quand t'étais petit(e) ?", answers: [
+  { text: "c'était quoi ton métier de rêve quand t'étais petit(e)?", answers: [
     "infirmier(ère)/vétérinaire", "pompier", "policier", "astronaute", "professeur",
     "athlète", "acteur/actrice", "scientifique", "artiste", "autre",
   ]},
-  { text: "c'est toi qui organises une sortie ? tu fais quoi", answers: [
-    "on part en rando", "shopping au centre commercial !", "aller au musée", "aller au zoo",
+  { text: "c'est toi qui organises une sortie? tu fais quoi", answers: [
+    "on part en rando", "shopping au centre commercial!", "aller au musée", "aller au zoo",
     "on va au bowling :p", "salle d'arcade :o", "pourquoi c'est moi le/la responsable 😭",
   ]},
-  { text: "tu DOIS faire du réseautage pour le boulot. t'arrives dans une salle bondée, tu fais quoi ?", answers: [
+  { text: "tu DOIS faire du réseautage pour le boulot. t'arrives dans une salle bondée, tu fais quoi?", answers: [
     "je fonce DIRECT vers quelqu'un que je connais", "je me balade et rencontre de nouvelles personnes",
     "je pleure, pourquoi je suis même là", "je m'en fous des gens, montre-moi le buffet",
   ]},
-  { text: "travail en équipe ! t'es quel genre de personne dans ce cas ?", answers: [
+  { text: "travail en équipe! t'es quel genre de personne dans ce cas?", answers: [
     "le/la leader : j'essaie de tout faire pour que le projet avance",
     "le/la conciliant(e) : ce que le groupe choisit, ça me va, je suis ok avec tout",
     "le/la négociateur/trice : j'essaie de faire en sorte que les idées de tout le monde s'accordent pour que le projet soit un peu de chacun",
@@ -389,7 +390,7 @@ const QFR = [
     "family guy", "the amazing world of gumball", "adventure time", "the big bang theory",
     "the office", "twilight", "death note", "game of thrones", "autre (j'ai pas de goût)",
   ]},
-  { text: "artiste(s) préféré(s) ?", answers: [
+  { text: "artiste(s) préféré(s)?", answers: [
     "lana del rey", "pinkpantheress", "blackpink", "tyler the creator", "a$ap rocky",
     "the marias", "malcolm todd", "billie eilish", "the weeknd", "daniel caesar",
     "don toliver", "childish gambino", "mac demarco", "the neighbourhood", "steve lacy",
@@ -404,32 +405,32 @@ const QFR = [
     "bleu profond", "rouge bordeaux", "jaune soleil", "vert forêt", "orange automne",
     "violet lavande", "blanc pur",
   ]},
-  { text: "tu peux avoir un objet tech stylé des années 80. tu choisis quoi ?", answers: [
+  { text: "tu peux avoir un objet tech stylé des années 80. tu choisis quoi?", answers: [
     "un walkman sony", "un boombox", "un magnétoscope avec des cassettes vhs", "la NES",
     "des verres collector édition spéciale fast-food", "un polaroid sun 600", "un apple macintosh (1984)",
   ]},
-  { text: "comment tu révises ?", answers: [
+  { text: "comment tu révises?", answers: [
     "je mets de la musique et je me concentre à fond", "pas de musique, stylo et papier, je fonce à sec",
     "je fais des fiches et des auto-tests", "je me fais aider par mes amis ou ma famille",
-    "je procrastine sans arrêt, smh",
+    "je procrastine sans arrêt, dsl",
   ]},
   { text: "choisis un type de pâtes", answers: [
     "spaghetti bolognaise", "carbonara", "pesto", "fettucine alfredo", "lasagnes",
     "mac and cheese (macaronis au fromage)",
   ]},
-  { text: "à quoi ressemble ta chambre ?", answers: [
+  { text: "à quoi ressemble ta chambre?", answers: [
     "tout est bien rangé et propre", "bon un peu en bazar mais ça va",
     "au moins c'est propre, mais pas rangé", "y'a des trucs PARTOUT mais je promets que je vais ranger bientôt",
     "les peluches ont envahi ma chambre",
   ]},
-  { text: "quel est ton langage de l'amour ?", answers: [
+  { text: "quel est ton langage de l'amour?", answers: [
     "les cadeaux", "les paroles valorisantes", "le contact physique", "le temps de qualité",
     "les services rendus",
   ]},
-  { text: "saison préférée ?", answers: [
+  { text: "saison préférée?", answers: [
     "printemps", "été", "automne", "hiver",
   ]},
-  { text: "comment tu gères une deadline ?", answers: [
+  { text: "comment tu gères une deadline?", answers: [
     "je commence tôt et je finis tôt", "j'utilise un agenda et des post-it pour tout suivre",
     "je panique à 23h59 pile", "quelle deadline",
   ]},
@@ -437,16 +438,16 @@ const QFR = [
     "savoir jouer de n'importe quel instrument", "toutes les langues", "cuisiner comme un chef étoilé",
     "peindre super bien", "savoir coder",
   ]},
-  { text: "si ta vie était un film, ce serait quel genre ?", answers: [
+  { text: "si ta vie était un film, ce serait quel genre?", answers: [
     "comédie romantique", "horreur", "drame indépendant", "action", "comédie musicale animée",
-    "film initiatique",
+    "coming-of-age",
   ]},
-  { text: "où voudrais-tu vivre ?", answers: [
-    "un appart, grande ville", "une belle maison, petite ville", "un chalet cosy dans les bois",
+  { text: "où voudrais-tu vivre?", answers: [
+    "un appart, grande ville", "une belle maison, petite ville", "un chalet cozy dans les bois",
     "une maison au bord de la mer", "à bord de l'iss",
   ]},
-  { text: "dernière question ! si t'étais un dessert, tu serais lequel ?", answers: [
-    "un fondant au chocolat", "un sundae avec des toppings trop mignons :p", "une crème brûlée",
+  { text: "dernière question! si t'étais un dessert, tu serais lequel?", answers: [
+    "un fondant au chocolat", "un sundae avec des toppings trop mimis :p", "une crème brûlée",
     "un muffin au chocolat", "des macarons", "un mochi",
   ]},
 ];
@@ -1030,8 +1031,11 @@ function renderAnswerReview() {
     const qText = lang === "fr" ? tr.text : question.text;
     const aText = ai => lang === "fr" ? tr.answers[ai] : question.answers[ai].text;
     return h("div", { class: "review-row" },
-      h("p", { class: "review-q" }, qText),
-      (state.chosen[i] || []).map(ai => h("p", { class: "review-a" }, aText(ai)))
+      h("span", { class: "review-n" }, String(i + 1)),
+      h("div", null,
+        h("p", { class: "review-q" }, qText),
+        (state.chosen[i] || []).map(ai => h("p", { class: "review-a" }, aText(ai)))
+      )
     );
   });
   const label = h("span", null, state.reviewOpen ? t().reviewHide : t().reviewShow);
